@@ -1,8 +1,15 @@
 
 from collections import deque
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 import json
+
+
+class Phase(StrEnum):
+    RED = "Red"
+    GREEN = "Green"
+    YELLOW = "Yellow"
 
 class LightState(StrEnum):
     RED = "Red"
@@ -30,7 +37,7 @@ class Crosswalk:
 
 @dataclass
 class Car:
-    target_street_index: int
+    target_approach_index: int
     clear_time: float=0.0  # Time it takes for the vehicle to reach the stop line
     wait_time: float=0.0  # Duration the vehicle has been waiting stopped
 
@@ -40,12 +47,14 @@ class Car:
             raise ValueError("clear_time must be non-negative")
 
 @dataclass
-class Street:
+class Approach:
+    name: str | None = None
     cars: deque[Car] = field(default_factory=deque)
     crosswalk: Crosswalk | None = None
     light: TrafficSignal = field(default_factory=TrafficSignal)
 
-    def __init__(self, *, has_crosswalk: bool = False):
+    def __init__(self, *, has_crosswalk: bool = False, name: str | None = None):
+        self.name = name
         self.cars = deque()
         self.light = TrafficSignal()
         self.crosswalk = Crosswalk() if has_crosswalk else None
@@ -68,15 +77,23 @@ class Street:
             }
         }
 
+@dataclass
+class Road:
+    approaches: Sequence[Approach]
+    phase: Phase = Phase.RED
 
 class Intersection:
-    def __init__(self, streets: list[Street]):
-        self.streets: list[Street] = streets
+    def __init__(self, roads: list[Road]):
+        self.roads: list[Road] = roads
+
+    @property
+    def approaches(self):
+        return [approach for road in self.roads for approach in road.approaches]
 
     def snapshot(self) -> dict:
         return {
-            f"street_{i}": street.snapshot()
-            for i, street in enumerate(self.streets)
+            approach.name if approach.name is not None else f"approach_{i}": approach.snapshot()
+            for i, approach in enumerate(self.approaches)
         }
 
 def get_clear_time(pos_idx: int) -> float:
@@ -85,16 +102,17 @@ def get_clear_time(pos_idx: int) -> float:
 
 def main():
     
-    # Two "streets" = a single road with a traffic light
-    street_1 = Street(has_crosswalk=True)
-    street_2 = Street(has_crosswalk=False)
+    # Two approaches
+    approach_1 = Approach(has_crosswalk=True)
+    approach_2 = Approach(has_crosswalk=False)
 
     # Build the "intersection"
-    intersection = Intersection(streets=[street_1, street_2])
+    road = Road(approaches=[approach_1, approach_2])
+    intersection = Intersection(roads=[road])
 
-    # Put a car on street 1
-    fast_car = Car(target_street_index=1, clear_time=1.0)
-    street_1.add_car(fast_car)
+    # Put a car on approach 1
+    fast_car = Car(target_approach_index=1, clear_time=1.0)
+    approach_1.add_car(fast_car)
 
     # Display the intersection
     state = intersection.snapshot()
