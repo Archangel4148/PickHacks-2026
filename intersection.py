@@ -9,12 +9,6 @@ class LightState(StrEnum):
     GREEN = "Green"
 
 @dataclass
-class Car:
-    target_street: Street
-    clear_time: float
-    wait_time: float=0.0
-
-@dataclass
 class TrafficSignal:
     state: LightState = LightState.RED
 
@@ -27,6 +21,12 @@ class Crosswalk:
     light: CrosswalkSignal = field(default_factory=CrosswalkSignal)
     people_waiting: int = 0
     button_pressed: bool = False
+
+@dataclass
+class Car:
+    target_street: "Street"
+    clear_time: float
+    wait_time: float=0.0
 
 @dataclass
 class Street:
