@@ -1,0 +1,5 @@
+https://nacto.org/publication/urban-street-design-guide/intersection-design-elements/traffic-signals/signal-cycle-lengths/
+
+A minimum WALK time of 7 seconds is required (MUTCD 4E.06).
+WALK times should be dictated by the overall crossing distance
+    and based on a minimum crossing speed of 2.5–3.5 feet per second.
