@@ -4,6 +4,7 @@ from intersection import (
     Road,
     Intersection,
     Car,
+    Turn,
 )
 from simulation import Simulator
 from traffic_control import FixedTimeController
@@ -18,13 +19,19 @@ def main():
     approach_west = Approach(name="west", has_crosswalk=True)
     road_ew = Road(approaches=[approach_east, approach_west])
 
-    intersection = Intersection(roads=[road_ns, road_ew])
+    topology = {
+        "north": {"west": Turn.RIGHT_TURN, "south": Turn.THROUGH, "east": Turn.LEFT_TURN},
+        "east": {"north": Turn.RIGHT_TURN, "west": Turn.THROUGH, "south": Turn.LEFT_TURN},
+        "south": {"east": Turn.RIGHT_TURN, "north": Turn.THROUGH, "west": Turn.LEFT_TURN},
+        "west": {"south": Turn.RIGHT_TURN, "east": Turn.THROUGH, "north": Turn.LEFT_TURN},
+    }
+    intersection = Intersection(roads=[road_ns, road_ew], topology=topology)
 
     # Add some cars
-    approach_north.add_car(Car(target_approach_index=0, clear_time=0.0))
-    approach_north.add_car(Car(target_approach_index=0, clear_time=1.5))
-    approach_east.add_car(Car(target_approach_index=1, clear_time=0.0))
-    approach_west.add_car(Car(target_approach_index=1, clear_time=1.5))
+    approach_north.add_car(Car(target_approach="south", clear_time=0.0))
+    approach_north.add_car(Car(target_approach="east", clear_time=1.5))
+    approach_east.add_car(Car(target_approach="west", clear_time=0.0))
+    approach_west.add_car(Car(target_approach="south", clear_time=1.5))
 
     # Add some pedestrians pressing buttons
     approach_north.crosswalk.people_waiting = 3
