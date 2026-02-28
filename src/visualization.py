@@ -1,13 +1,13 @@
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
-from IPython.display import HTML #For rendering in Colab
+# from IPython.display import HTML #For rendering in Colab
 from PIL import Image
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Rectangle, Circle
 from matplotlib.text import Text
 
-from intersection import Intersection, Approach, Car, LightState, WalkState
+from intersection import Intersection, Approach, Car, LightState, Road, WalkState
 from simulation import Simulator
 from traffic_control import FixedTimeController
 
@@ -28,7 +28,6 @@ LIGHT_COLORS = {
     "Yellow": "gold",
     "Red": "red",
 }
-
 
 def render_snapshot(snapshot:dict, show = True):
   fig, ax = plt.subplots(figsize=(6,6))
@@ -56,25 +55,25 @@ def render_snapshot(snapshot:dict, show = True):
     car_y = stop_y + (-dy) * offset
 
 
-  #HORIZONTAL:
-  if dx != 0:
-    rect = Rectangle(
-                    (car_x - CAR_SIZE[0] / 2, car_y - CAR_SIZE[1] / 2),
-                    CAR_SIZE[0],
-                    CAR_SIZE[1],
-                    facecolor="tab:blue",
-                    edgecolor="black"
-                    )
-  #Vertical:
-  else:
-    rect = Rectangle(
-                    (car_x - CAR_SIZE[1] / 2, car_y - CAR_SIZE[0] / 2),
-                    CAR_SIZE[1],
-                    CAR_SIZE[0],
-                    facecolor="tab:blue",
-                    edgecolor="black"
-                    )
-  ax.add_patch(rect)
+    #HORIZONTAL:
+    if dx != 0:
+      rect = Rectangle(
+        (car_x - CAR_SIZE[0] / 2, car_y - CAR_SIZE[1] / 2),
+        CAR_SIZE[0],
+        CAR_SIZE[1],
+        facecolor="tab:blue",
+        edgecolor="black"
+      )
+    #Vertical:
+    else:
+      rect = Rectangle(
+        (car_x - CAR_SIZE[1] / 2, car_y - CAR_SIZE[0] / 2),
+        CAR_SIZE[1],
+        CAR_SIZE[0],
+        facecolor="tab:blue",
+        edgecolor="black"
+      )
+    ax.add_patch(rect)
   
 
 
@@ -85,7 +84,25 @@ def render_snapshot(snapshot:dict, show = True):
   return fig, ax
 
 def main():
+  # Build the approaches
+  approach_north = Approach(name="north_approach", has_crosswalk=True)
+  approach_south = Approach(name="south_approach", has_crosswalk=True)
+  road_ns = Road(approaches=[approach_north, approach_south])
+  approach_east = Approach(name="east_approach", has_crosswalk=True)
+  approach_west = Approach(name="west_approach", has_crosswalk=True)
+  road_ew = Road(approaches=[approach_east, approach_west])
+
+  # Create the intersection
+  intersection = Intersection(roads=[road_ns, road_ew])
+
+  # Add some cars
+  approach_north.add_car(Car(target_approach_index=0, clear_time=0.0))
+  approach_north.add_car(Car(target_approach_index=0, clear_time=1.5))
+  approach_east.add_car(Car(target_approach_index=1, clear_time=0.0))
+  approach_west.add_car(Car(target_approach_index=1, clear_time=0.0))
+
   render_snapshot(intersection.snapshot())
+
 if __name__ == "__main__":
   main()
 
