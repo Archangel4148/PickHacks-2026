@@ -1,5 +1,4 @@
-from intersection import Intersection, LightState, WalkState, get_clear_time
-
+from intersection import Intersection, LightState, WalkState, get_clear_time, turn_allowed
 
 class Simulator:
     # This class manages simulation of an intersection
@@ -7,38 +6,45 @@ class Simulator:
         self.intersection = intersection
         self.time = 0.0
         self.total_wait_time = 0.0
-        self.prev_light_states = [
-            approach.light.state for approach in intersection.approaches
-        ]
+        self.prev_can_move = [False] * len(intersection.approaches)
 
     def tick(self, dt: float):
         # Advance by one simulation step
         self.time += dt
-        self._apply_road_phases()
         self._update_cars(dt)
         self._update_pedestrians(dt)
 
-    def _apply_road_phases(self):
-        for road in self.intersection.roads:
-            for approach in road.approaches:
-                approach.light.state = LightState(road.phase.value)
-
     def _update_cars(self, dt: float):
         for i, approach in enumerate(self.intersection.approaches):
-            prev_state = self.prev_light_states[i]
-            curr_state = approach.light.state
+            road = self.intersection.approach_to_road(approach)
+            phase = road.phase
 
-            # Green: all cars move
-            if curr_state == LightState.GREEN:
-                for car in approach.cars:
+            blocked = False
+            any_movement = False
+
+            # Track cars that move
+            moved_cars = []
+
+            for car in approach.cars:
+                if blocked:
+                    break
+
+                # Can this car move?
+                intended_turn = self.intersection.get_turn(approach.name, car.target_approach)
+                if turn_allowed(phase, intended_turn):
                     car.clear_time -= dt
+                    any_movement = True
+                    moved_cars.append(car)
+                else:
+                    blocked = True
 
-                # Remove cars that made it through
-                while approach.cars and approach.cars[0].clear_time <= 0:
-                    approach.cars.popleft()
+            # Remove cars that made it through
+            while moved_cars and moved_cars[0].clear_time <= 0:
+                approach.cars.popleft()
+                moved_cars.pop(0)
 
-            # Green -> Red: settle the cars' positions
-            if prev_state == LightState.GREEN and curr_state == LightState.RED:
+            # Settle car positions after everything stops moving
+            if self.prev_can_move[i] and not any_movement:
                 for idx, car in enumerate(approach.cars):
                     car.clear_time = get_clear_time(idx)
 
@@ -46,9 +52,6 @@ class Simulator:
             for car in approach.cars:
                 car.wait_time += dt
                 self.total_wait_time += dt
-
-            # Update previous state
-            self.prev_light_states[i] = curr_state
 
     def _update_pedestrians(self, dt: float):
         for approach in self.intersection.approaches:
