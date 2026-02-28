@@ -1,0 +1,6 @@
+The movements served at an intersection can be categorized by the various users: vehicles, pedestrians, bicyclists, and transit. Figure 4-2 illustrates the typical vehicle and pedestrian movements at a four-leg intersection. In the context of this figure, bicycle and transit movements track the same paths as vehicle movements. These movements are regulated by the signal controller through their allocation to one or more signal phases. The following list defines some of the terms used to describe vehicle and pedestrian phasing (4):
+
+    A vehicular phase is defined as a phase that is allocated to one or more vehicular traffic movements, as timed by the controller unit.
+    A pedestrian phase is defined as a traffic phase allocated to pedestrian traffic that may provide a pedestrian indication either concurrent with one or more vehicular phases, or separate from all vehicular phases.
+    A traffic phase is defined as the green, change, and clearance intervals in a cycle assigned to specified movement(s) of traffic.
+    A cycle is defined as the total time to complete one sequence of signalization for all movements at an intersection. In an actuated controller unit, the cycle is a complete sequence of all signal indications.
