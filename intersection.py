@@ -31,8 +31,8 @@ class Crosswalk:
 @dataclass
 class Car:
     target_street_index: int
-    clear_time: float
-    wait_time: float=0.0
+    clear_time: float=0.0  # Time it takes for the vehicle to reach the stop line
+    wait_time: float=0.0  # Duration the vehicle has been waiting stopped
 
     def __post_init__(self):
         # Validate the clear time
@@ -78,6 +78,10 @@ class Intersection:
             f"street_{i}": street.snapshot()
             for i, street in enumerate(self.streets)
         }
+
+def get_clear_time(pos_idx: int) -> float:
+    CAR_SPACING_TIME = 1.5  # seconds per car
+    return pos_idx * CAR_SPACING_TIME
 
 def main():
     
