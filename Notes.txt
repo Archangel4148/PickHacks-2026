@@ -4,3 +4,11 @@ The movements served at an intersection can be categorized by the various users:
     A pedestrian phase is defined as a traffic phase allocated to pedestrian traffic that may provide a pedestrian indication either concurrent with one or more vehicular phases, or separate from all vehicular phases.
     A traffic phase is defined as the green, change, and clearance intervals in a cycle assigned to specified movement(s) of traffic.
     A cycle is defined as the total time to complete one sequence of signalization for all movements at an intersection. In an actuated controller unit, the cycle is a complete sequence of all signal indications.
+
+Minimum green time for pedestrians (Gp) (sec)
+Gp = 3.2 + L/Sp + 0.27Nped
+    L = Crosswalk length
+    Sp = pedestrian speed (ft/sec), default 3.5 ft/sec
+    Nped = number of pedestrians in intervals
+
+Minimum Gap
