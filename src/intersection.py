@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 from collections import deque
 from collections.abc import Sequence
@@ -82,7 +83,7 @@ class Approach:
     def add_car(self, car: Car):
         self.cars.append(car)
 
-    def snapshot(self, intersection: "Intersection" | None = None) -> dict:
+    def snapshot(self, intersection: Intersection | None = None) -> dict:
         """Return snapshot of this approach, optionally showing car turn directions."""
         car_turns = None
         if intersection:
