@@ -1,26 +1,25 @@
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
-from IPython.display import HTML #For rendering in Colab
 from PIL import Image
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Rectangle, Circle
 from matplotlib.text import Text
 
-from intersection import Intersection, Approach, Car, LightState, WalkState
+from intersection import Intersection, Approach, Car, LightState, WalkState, Road
 from simulation import Simulator
 from traffic_control import FixedTimeController
 
-#Initializing the layout
+# Initializing the layout
 
 APPROACH_LAYOUT = {
     "north_approach": {"stop": (50, 70), "dir": (0, -1), "lane_width": 6},
     "south_approach": {"stop": (50, 30), "dir": (0, 1), "lane_width": 6},
-    "east_approach": {"stop": (70, 50), "dir": (1, 0), "lane_width": 6}, 
-    "west_approach": {"stop": (30, 50), "dir": (-1, 0), "lane_width":6}
-} #----- Do east and west need to swap dir? ------
+    "east_approach": {"stop": (70, 50), "dir": (1, 0), "lane_width": 6},
+    "west_approach": {"stop": (30, 50), "dir": (-1, 0), "lane_width": 6}
+}  # ----- Do east and west need to swap dir? ------
 
-CAR_SIZE = (6,3)
+CAR_SIZE = (6, 3)
 CAR_SPACING = 5
 
 LIGHT_COLORS = {
@@ -30,129 +29,127 @@ LIGHT_COLORS = {
 }
 
 
-def render_snapshot(snapshot:dict, show = True):
-  fig, ax = plt.subplots(figsize=(6,6))
-  ax.set_xlim(0, 100)
-  ax.set_ylim(0, 100)
-  ax.set_aspect('equal')
-  ax.axis('off')
-  
-  #Roads
-  ax.add_patch(Rectangle((40,20), 20, 60, color="gray", alpha = 0.3, fill=True))
-  ax.add_patch(Rectangle((20, 40), 60, 20, color="gray", alpha = 0.3, fill=True))
+def render_snapshot(snapshot: dict, show=True):
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.set_xlim(0, 100)
+    ax.set_ylim(0, 100)
+    ax.set_aspect('equal')
+    ax.axis('off')
 
-  for app_name, data in snapshot.items():
+    # Roads
+    ax.add_patch(Rectangle((40, 20), 20, 60, color="gray", alpha=0.3, fill=True))
+    ax.add_patch(Rectangle((20, 40), 60, 20, color="gray", alpha=0.3, fill=True))
+
+    for app_name, data in snapshot.items():
         if app_name not in APPROACH_LAYOUT:
             continue
-  layout = APPROACH_LAYOUT[app_name]
-  stop_x, stop_y = layout["stop"]
-  dx, dy = layout["dir"]
 
-  #---------------
-  #      Cars
-  #---------------
-  n_cars = data.get("num_cars", 0)
-  for i in range(n_cars):
-    offset = i * (CAR_SIZE[0] + CAR_SPACING)
-    car_x = stop_x + (-dx) * offset
-    car_y = stop_y + (-dy) * offset
+        layout = APPROACH_LAYOUT[app_name]
+        stop_x, stop_y = layout["stop"]
+        dx, dy = layout["dir"]
 
+        # ---------------
+        #      Cars
+        # ---------------
+        n_cars = data.get("num_cars", 0)
+        for i in range(n_cars):
+            offset = i * (CAR_SIZE[0] + CAR_SPACING)
+            car_x = stop_x + (-dx) * offset
+            car_y = stop_y + (-dy) * offset
 
-  #HORIZONTAL:
-  if dx != 0:
-    rect = Rectangle(
+            # HORIZONTAL:
+            if dx != 0:
+                rect = Rectangle(
                     (car_x - CAR_SIZE[0] / 2, car_y - CAR_SIZE[1] / 2),
                     CAR_SIZE[0],
                     CAR_SIZE[1],
                     facecolor="tab:blue",
                     edgecolor="black"
-                    )
-  #Vertical:
-  else:
-    rect = Rectangle(
+                )
+            # Vertical:
+            else:
+                rect = Rectangle(
                     (car_x - CAR_SIZE[1] / 2, car_y - CAR_SIZE[0] / 2),
                     CAR_SIZE[1],
                     CAR_SIZE[0],
                     facecolor="tab:blue",
                     edgecolor="black"
-                    )
-  ax.add_patch(rect)
+                )
+            ax.add_patch(rect)
 
-  #---------------
-  # Traffic Lights
-  #---------------
+        # ---------------
+        # Traffic Lights
+        # ---------------
 
-  light_state = data.get("light", "Red")
-  light_color = LIGHT_COLORS.get(light_state, "gray")
+        light_state = data.get("light", "Red")
+        light_color = LIGHT_COLORS.get(light_state, "gray")
 
-  light_offset = {
-      "north_approach": (0, 10),
-      "south_approach": (0, -10),
-      "east_approach": (-10, 0),
-      "west_approach": (10, 0)
-  }[app_name] #swap west and east?
+        light_offset = {
+            "north_approach": (0, -10),
+            "south_approach": (0, 10),
+            "east_approach": (-10, 0),
+            "west_approach": (10, 0)
+        }[app_name]  # swap west and east?
 
-  lx = stop_x + light_offset[0]
-  ly = stop_y + light_offset[1]
+        lx = stop_x + light_offset[0]
+        ly = stop_y + light_offset[1]
 
-  light_circle = Circle((lx, ly), radius=3, color=light_color, ec="Black")
-  ax.add_patch(light_circle)  
+        light_circle = Circle((lx, ly), radius=3, color=light_color, ec="Black")
+        ax.add_patch(light_circle)
 
+        # ---------------
+        #  Pedestrians
+        # ---------------
 
-  #---------------
-  #  Pedestrians
-  #---------------
+        crosswalk = data.get("crosswalk")
+        if crosswalk:
+            people = crosswalk.get("people_waiting", 0)
+        else:
+            people = 0
 
-  crosswalk = data.get("crosswalk")
-  if crosswalk:
-    people = crosswalk.get("people_waiting", 0)
+        if people > 0:
+            pedestrian_offset = {
+                "approach_north": (0, 10),
+                "approach_south": (0, -10),
+                "approach_east": (-10, 0),
+                "approach_west": (10, 0),
+            }[app_name]
+            pox, poy = pedestrian_offset.get(app_name, (0, 0))
 
-    if people > 0:
-      pedestrian_offset = {
-          "approach_north": (0, 10),
-          "approach_south": (0, -10),
-          "approach_east":(-10, 0),
-          "approach_west":(10, 0),
-      }[app_name]
+            px = stop_x + pox
+            py = stop_y + poy
 
-      px = stop_x + pedestrian_offset[0]
-      py = stop_y + pedestrian_offset[1]
+            pedestrian_circle = Circle((px, py), radius=1.5 + 0.6 * people, color="purple", )
+            ax.add_patch(pedestrian_circle)
 
-      pedestrian_circle = Circle((px, py), radius=10+0.6*people, color="purple",)
-      ax.add_patch(pedestrian_circle)
+            # ax.text(px + 4, py, str(people), fontsize=9, va="center")
 
-      # ax.text(px + 4, py, str(people), fontsize=9, va="center")
+    if show:
+        plt.show()
 
+    return fig, ax
 
-
-
-
-  if show:
-    plt.show()
-
-  return fig, ax
 
 def main():
     # Build the approaches
-  approach_north = Approach(name="north_approach", has_crosswalk=True)
-  approach_south = Approach(name="south_approach", has_crosswalk=True)
-  road_ns = Road(approaches=[approach_north, approach_south])
-  approach_east = Approach(name="east_approach", has_crosswalk=True)
-  approach_west = Approach(name="west_approach", has_crosswalk=True)
-  road_ew = Road(approaches=[approach_east, approach_west])
+    approach_north = Approach(name="north_approach", has_crosswalk=True)
+    approach_south = Approach(name="south_approach", has_crosswalk=True)
+    road_ns = Road(approaches=[approach_north, approach_south])
+    approach_east = Approach(name="east_approach", has_crosswalk=True)
+    approach_west = Approach(name="west_approach", has_crosswalk=True)
+    road_ew = Road(approaches=[approach_east, approach_west])
 
-  # Create the intersection
-  intersection = Intersection(roads=[road_ns, road_ew])
+    # Create the intersection
+    intersection = Intersection(roads=[road_ns, road_ew])
 
-  # Add some cars
-  approach_north.add_car(Car(target_approach_index=0, clear_time=0.0))
-  approach_north.add_car(Car(target_approach_index=0, clear_time=1.5))
-  approach_east.add_car(Car(target_approach_index=1, clear_time=0.0))
-  approach_west.add_car(Car(target_approach_index=1, clear_time=0.0))
+    # Add some cars
+    approach_north.add_car(Car(target_approach_index=0, clear_time=0.0))
+    approach_north.add_car(Car(target_approach_index=0, clear_time=1.5))
+    approach_east.add_car(Car(target_approach_index=1, clear_time=0.0))
+    approach_west.add_car(Car(target_approach_index=1, clear_time=0.0))
 
-  render_snapshot(intersection.snapshot())
+    render_snapshot(intersection.snapshot())
+
+
 if __name__ == "__main__":
-  main()
-
-
-# HTML(ani.to_jshtml())
+    main()
