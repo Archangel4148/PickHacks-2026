@@ -52,6 +52,8 @@ class Simulator:
             for car in approach.cars:
                 car.wait_time += dt
                 self.total_wait_time += dt
+            
+            self.prev_can_move[i] = any_movement
 
     def _update_pedestrians(self, dt: float):
         for approach in self.intersection.approaches:
